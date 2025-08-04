@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Avaliações - Clínica Espaço Vida</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        .rating-card {
+            border-left: 4px solid #28a745;
+            transition: transform 0.2s;
+        }
+        .rating-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rating-excellent { border-left-color: #28a745; }
+        .rating-good { border-left-color: #17a2b8; }
+        .rating-average { border-left-color: #ffc107; }
+        .rating-poor { border-left-color: #fd7e14; }
+        .rating-terrible { border-left-color: #dc3545; }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .nps-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .csat-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .alert-card {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .star-rating {
+            color: #ffc107;
+        }
+        
+        .feedback-item {
+            border-left: 3px solid #dee2e6;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .feedback-positive { border-left-color: #28a745; }
+        .feedback-negative { border-left-color: #dc3545; }
+        
+        .alert-item {
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #fff3cd;
+        }
+        .alert-high { border-left-color: #dc3545; background-color: #f8d7da; }
+        .alert-medium { border-left-color: #ffc107; background-color: #fff3cd; }
+        .alert-low { border-left-color: #17a2b8; background-color: #d1ecf1; }
+        
+        .nps-gauge {
+            width: 200px;
+            height: 100px;
+            position: relative;
+        }
+        
+        .rating-distribution {
+            display: flex;
+            align-items: end;
+            height: 100px;
+            gap: 5px;
+        }
+        
+        .rating-bar {
+            background: linear-gradient(to top, #007bff, #0056b3);
+            border-radius: 3px 3px 0 0;
+            min-height: 5px;
+            flex: 1;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px;
+        }
+        
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-star me-2"></i>
+                Dashboard de Avaliações
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Voltar ao Admin
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Filtros -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="start-date">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="end-date">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Departamento</label>
+                    <select class="form-select" id="department-filter">
+                        <option value="">Todos os departamentos</option>
+                        <option value="atendimento">Atendimento</option>
+                        <option value="vendas">Vendas</option>
+                        <option value="suporte">Suporte</option>
+                        <option value="financeiro">Financeiro</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Agente</label>
+                    <select class="form-select" id="agent-filter">
+                        <option value="">Todos os agentes</option>
+                        <option value="Ana Silva">Ana Silva</option>
+                        <option value="Carlos Santos">Carlos Santos</option>
+                        <option value="Maria Oliveira">Maria Oliveira</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="fas fa-filter me-1"></i>Aplicar Filtros
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </button>
+                    <button class="btn btn-success ms-2" onclick="exportReport()">
+                        <i class="fas fa-download me-1"></i>Exportar Relatório
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Principais -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star fa-2x mb-2"></i>
+                        <h3 class="mb-0" id="avg-rating">0.0</h3>
+                        <small>Avaliação Média</small>
+                        <div class="star-rating mt-2" id="avg-rating-stars">
+                            <!-- Estrelas serão inseridas aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card nps-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-thumbs-up fa-2x mb-2"></i>
+                        <h3 class="mb-0" id="nps-score">0</h3>
+                        <small>NPS Score</small>
+                        <div class="mt-2">
+                            <small id="nps-category">Neutro</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card csat-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-smile fa-2x mb-2"></i>
+                        <h3 class="mb-0" id="csat-score">0%</h3>
+                        <small>CSAT Score</small>
+                        <div class="mt-2">
+                            <small>Clientes Satisfeitos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card alert-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h3 class="mb-0" id="total-alerts">0</h3>
+                        <small>Alertas Ativos</small>
+                        <div class="mt-2">
+                            <small id="high-priority-alerts">0 alta prioridade</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribuição de Avaliações -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Distribuição de Avaliações</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="rating-distribution" id="rating-distribution">
+                            <!-- Barras serão inseridas aqui -->
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small>1⭐</small>
+                            <small>2⭐</small>
+                            <small>3⭐</small>
+                            <small>4⭐</small>
+                            <small>5⭐</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Avaliações por Categoria</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abas de Conteúdo -->
+        <ul class="nav nav-tabs" id="ratingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="fas fa-chart-line me-2"></i>Visão Geral
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="feedback-tab" data-bs-toggle="tab" data-bs-target="#feedback" type="button" role="tab">
+                    <i class="fas fa-comments me-2"></i>Feedbacks
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Alertas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button" role="tab">
+                    <i class="fas fa-trending-up me-2"></i>Tendências
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="ratingTabsContent">
+            <!-- Aba Visão Geral -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Avaliações por Dia</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="ratingsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Métricas Detalhadas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Qualidade do Serviço:</span>
+                                        <span id="service-quality">0.0</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar" id="service-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Tempo de Resposta:</span>
+                                        <span id="response-time">0.0</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar bg-info" id="response-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Resolução de Problemas:</span>
+                                        <span id="resolution-quality">0.0</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar bg-warning" id="resolution-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Recomendação:</span>
+                                        <span id="recommendation-score">0.0</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar bg-success" id="recommendation-progress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Feedbacks -->
+            <div class="tab-pane fade" id="feedback" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">Feedbacks Positivos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="positive-feedback">
+                                    <!-- Feedbacks positivos serão carregados aqui -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0">Feedbacks Negativos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="negative-feedback">
+                                    <!-- Feedbacks negativos serão carregados aqui -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Alertas -->
+            <div class="tab-pane fade" id="alerts" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Alertas de Qualidade</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadAlerts(false)">
+                                Ativos
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="loadAlerts(true)">
+                                Resolvidos
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="alerts-list">
+                            <!-- Alertas serão carregados aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Tendências -->
+            <div class="tab-pane fade" id="trends" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Tendência de Satisfação (30 dias)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="trendsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Resolver Alerta -->
+    <div class="modal fade" id="resolveAlertModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resolver Alerta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="resolve-alert-form">
+                        <input type="hidden" id="alert-id">
+                        <div class="mb-3">
+                            <label class="form-label">Resolvido por:</label>
+                            <input type="text" class="form-control" id="resolved-by" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas de resolução:</label>
+                            <textarea class="form-control" id="resolution-notes" rows="3" placeholder="Descreva as ações tomadas para resolver este alerta..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="resolveAlert()">Resolver Alerta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Variáveis globais
+        let ratingsChart, categoryChart, trendsChart;
+        let currentAnalytics = {};
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateFilters();
+            loadAnalytics();
+            loadAlerts(false);
+            initCharts();
+            
+            // Atualizar dados a cada 2 minutos
+            setInterval(loadAnalytics, 120000);
+        });
+
+        // Inicializar filtros de data
+        function initializeDateFilters() {
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('start-date').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('end-date').value = today.toISOString().split('T')[0];
+        }
+
+        // Carregar analytics
+        function loadAnalytics() {
+            const params = new URLSearchParams();
+            
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const department = document.getElementById('department-filter').value;
+            const agent = document.getElementById('agent-filter').value;
+            
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (department) params.append('department', department);
+            if (agent) params.append('agent', agent);
+            
+            fetch(`/rating/analytics?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentAnalytics = data.analytics;
+                        updateDashboard(data.analytics);
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar analytics:', error));
+        }
+
+        // Atualizar dashboard
+        function updateDashboard(analytics) {
+            // Métricas principais
+            document.getElementById('avg-rating').textContent = analytics.average_rating || '0.0';
+            document.getElementById('nps-score').textContent = Math.round(analytics.nps_score || 0);
+            document.getElementById('csat-score').textContent = Math.round(analytics.csat_score || 0) + '%';
+            
+            // Atualizar estrelas da avaliação média
+            updateStarRating('avg-rating-stars', analytics.average_rating || 0);
+            
+            // Atualizar categoria NPS
+            updateNPSCategory(analytics.nps_score || 0);
+            
+            // Métricas detalhadas
+            updateDetailedMetrics(analytics);
+            
+            // Distribuição de avaliações
+            updateRatingDistribution(analytics.rating_distribution || {});
+            
+            // Feedbacks
+            updateFeedbacks(analytics.positive_feedback || [], analytics.negative_feedback || []);
+            
+            // Atualizar gráficos
+            updateCharts(analytics);
+        }
+
+        // Atualizar estrelas
+        function updateStarRating(elementId, rating) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = i <= rating ? 'fas fa-star' : 'far fa-star';
+                container.appendChild(star);
+            }
+        }
+
+        // Atualizar categoria NPS
+        function updateNPSCategory(score) {
+            const element = document.getElementById('nps-category');
+            if (score >= 70) {
+                element.textContent = 'Excelente';
+                element.className = 'text-success';
+            } else if (score >= 50) {
+                element.textContent = 'Muito Bom';
+                element.className = 'text-info';
+            } else if (score >= 30) {
+                element.textContent = 'Bom';
+                element.className = 'text-warning';
+            } else if (score >= 0) {
+                element.textContent = 'Regular';
+                element.className = 'text-warning';
+            } else {
+                element.textContent = 'Crítico';
+                element.className = 'text-danger';
+            }
+        }
+
+        // Atualizar métricas detalhadas
+        function updateDetailedMetrics(analytics) {
+            const metrics = [
+                { id: 'service', value: analytics.average_service || 0 },
+                { id: 'response', value: analytics.average_response || 0 },
+                { id: 'resolution', value: analytics.average_resolution || 0 },
+                { id: 'recommendation', value: analytics.average_recommendation || 0 }
+            ];
+            
+            metrics.forEach(metric => {
+                const percentage = (metric.value / 5) * 100;
+                document.getElementById(`${metric.id}-quality`).textContent = metric.value.toFixed(1);
+                document.getElementById(`${metric.id}-progress`).style.width = percentage + '%';
+            });
+        }
+
+        // Atualizar distribuição de avaliações
+        function updateRatingDistribution(distribution) {
+            const container = document.getElementById('rating-distribution');
+            container.innerHTML = '';
+            
+            const maxValue = Math.max(...Object.values(distribution));
+            
+            for (let i = 1; i <= 5; i++) {
+                const count = distribution[i] || 0;
+                const height = maxValue > 0 ? (count / maxValue) * 100 : 0;
+                
+                const bar = document.createElement('div');
+                bar.className = 'rating-bar';
+                bar.style.height = Math.max(height, 5) + '%';
+                bar.textContent = count;
+                
+                container.appendChild(bar);
+            }
+        }
+
+        // Atualizar feedbacks
+        function updateFeedbacks(positive, negative) {
+            // Feedbacks positivos
+            const positiveContainer = document.getElementById('positive-feedback');
+            positiveContainer.innerHTML = '';
+            
+            if (positive.length === 0) {
+                positiveContainer.innerHTML = '<p class="text-muted">Nenhum feedback positivo no período selecionado.</p>';
+            } else {
+                positive.forEach(feedback => {
+                    const item = document.createElement('div');
+                    item.className = 'feedback-item feedback-positive';
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${feedback.user || 'Anônimo'}</strong>
+                                <div class="star-rating">
+                                    ${'★'.repeat(feedback.rating)}${'☆'.repeat(5 - feedback.rating)}
+                                </div>
+                                <p class="mb-1 mt-2">${feedback.text}</p>
+                                <small class="text-muted">${formatDate(feedback.date)}</small>
+                            </div>
+                        </div>
+                    `;
+                    positiveContainer.appendChild(item);
+                });
+            }
+            
+            // Feedbacks negativos
+            const negativeContainer = document.getElementById('negative-feedback');
+            negativeContainer.innerHTML = '';
+            
+            if (negative.length === 0) {
+                negativeContainer.innerHTML = '<p class="text-muted">Nenhum feedback negativo no período selecionado.</p>';
+            } else {
+                negative.forEach(feedback => {
+                    const item = document.createElement('div');
+                    item.className = 'feedback-item feedback-negative';
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${feedback.user || 'Anônimo'}</strong>
+                                <div class="star-rating">
+                                    ${'★'.repeat(feedback.rating)}${'☆'.repeat(5 - feedback.rating)}
+                                </div>
+                                <p class="mb-1 mt-2">${feedback.text}</p>
+                                <small class="text-muted">${formatDate(feedback.date)}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="followUpFeedback('${feedback.user}')">
+                                <i class="fas fa-phone"></i>
+                            </button>
+                        </div>
+                    `;
+                    negativeContainer.appendChild(item);
+                });
+            }
+        }
+
+        // Carregar alertas
+        function loadAlerts(resolved = false) {
+            fetch(`/rating/alerts?resolved=${resolved}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateAlertsDisplay(data.alerts, resolved);
+                        if (!resolved) {
+                            document.getElementById('total-alerts').textContent = data.alerts.length;
+                            const highPriority = data.alerts.filter(a => a.severity === 'high').length;
+                            document.getElementById('high-priority-alerts').textContent = `${highPriority} alta prioridade`;
+                        }
+                    }
+                })
+                .catch(error => console.error('Erro ao carregar alertas:', error));
+        }
+
+        // Atualizar exibição de alertas
+        function updateAlertsDisplay(alerts, resolved) {
+            const container = document.getElementById('alerts-list');
+            container.innerHTML = '';
+            
+            if (alerts.length === 0) {
+                container.innerHTML = `<p class="text-muted">Nenhum alerta ${resolved ? 'resolvido' : 'ativo'} encontrado.</p>`;
+                return;
+            }
+            
+            alerts.forEach(alert => {
+                const item = document.createElement('div');
+                item.className = `alert-item alert-${alert.severity}`;
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${alert.title}</h6>
+                            <p class="mb-1">${alert.description}</p>
+                            <small class="text-muted">
+                                ${alert.department ? `Departamento: ${alert.department} | ` : ''}
+                                ${alert.agent_name ? `Agente: ${alert.agent_name} | ` : ''}
+                                ${formatDate(alert.created_at)}
+                            </small>
+                            ${resolved ? `<br><small class="text-success">Resolvido por: ${alert.resolved_by} em ${formatDate(alert.resolved_at)}</small>` : ''}
+                        </div>
+                        ${!resolved ? `
+                            <button class="btn btn-sm btn-success" onclick="openResolveModal(${alert.id})">
+                                <i class="fas fa-check"></i> Resolver
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Inicializar gráficos
+        function initCharts() {
+            // Gráfico de avaliações por dia
+            const ratingsCtx = document.getElementById('ratingsChart').getContext('2d');
+            ratingsChart = new Chart(ratingsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Número de Avaliações',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Avaliação Média',
+                        data: [],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 0,
+                            max: 5,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de categorias
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Qualidade', 'Tempo de Resposta', 'Resolução', 'Recomendação'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de tendências
+            const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+            trendsChart = new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'NPS Score',
+                        data: [],
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'CSAT Score',
+                        data: [],
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Atualizar gráficos
+        function updateCharts(analytics) {
+            // Atualizar gráfico de avaliações por dia
+            if (analytics.ratings_by_day) {
+                const labels = analytics.ratings_by_day.map(item => formatDate(item.date));
+                const counts = analytics.ratings_by_day.map(item => item.count);
+                const avgRatings = analytics.ratings_by_day.map(item => item.avg_rating);
+                
+                ratingsChart.data.labels = labels;
+                ratingsChart.data.datasets[0].data = counts;
+                ratingsChart.data.datasets[1].data = avgRatings;
+                ratingsChart.update();
+            }
+            
+            // Atualizar gráfico de categorias
+            categoryChart.data.datasets[0].data = [
+                analytics.average_service || 0,
+                analytics.average_response || 0,
+                analytics.average_resolution || 0,
+                analytics.average_recommendation || 0
+            ];
+            categoryChart.update();
+        }
+
+        // Aplicar filtros
+        function applyFilters() {
+            loadAnalytics();
+        }
+
+        // Limpar filtros
+        function clearFilters() {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('department-filter').value = '';
+            document.getElementById('agent-filter').value = '';
+            loadAnalytics();
+        }
+
+        // Exportar relatório
+        function exportReport() {
+            const params = new URLSearchParams();
+            params.append('export', 'true');
+            
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const department = document.getElementById('department-filter').value;
+            const agent = document.getElementById('agent-filter').value;
+            
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (department) params.append('department', department);
+            if (agent) params.append('agent', agent);
+            
+            window.open(`/rating/analytics?${params.toString()}`, '_blank');
+        }
+
+        // Abrir modal de resolver alerta
+        function openResolveModal(alertId) {
+            document.getElementById('alert-id').value = alertId;
+            document.getElementById('resolved-by').value = '';
+            document.getElementById('resolution-notes').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('resolveAlertModal'));
+            modal.show();
+        }
+
+        // Resolver alerta
+        function resolveAlert() {
+            const alertId = document.getElementById('alert-id').value;
+            const resolvedBy = document.getElementById('resolved-by').value;
+            const notes = document.getElementById('resolution-notes').value;
+            
+            if (!resolvedBy) {
+                alert('Por favor, informe quem resolveu o alerta.');
+                return;
+            }
+            
+            fetch(`/rating/alerts/${alertId}/resolve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    resolved_by: resolvedBy,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Alerta resolvido com sucesso!');
+                    bootstrap.Modal.getInstance(document.getElementById('resolveAlertModal')).hide();
+                    loadAlerts(false);
+                } else {
+                    alert('Erro ao resolver alerta: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao resolver alerta');
+            });
+        }
+
+        // Follow-up de feedback
+        function followUpFeedback(userName) {
+            alert(`Iniciando follow-up com ${userName}. Esta funcionalidade será implementada em breve.`);
+        }
+
+        // Função auxiliar para formatar data
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('pt-BR');
+        }
+    </script>
+</body>
+</html>

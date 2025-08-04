@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrações - Dashboard Administrativo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .integration-card {
+            transition: transform 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+        .integration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            font-size: 0.8em;
+        }
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin">
+                <i class="fas fa-hospital"></i> Clínica Espaço Vida - Integrações
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/admin">Dashboard</a>
+                <a class="nav-link" href="/logout">Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-plug"></i> Integrações</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-pills flex-column" id="integrationTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="whatsapp-tab" data-bs-toggle="pill" data-bs-target="#whatsapp" type="button" role="tab">
+                                    <i class="fab fa-whatsapp text-success"></i> WhatsApp
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="telegram-tab" data-bs-toggle="pill" data-bs-target="#telegram" type="button" role="tab">
+                                    <i class="fab fa-telegram text-info"></i> Telegram
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="website-tab" data-bs-toggle="pill" data-bs-target="#website" type="button" role="tab">
+                                    <i class="fas fa-globe text-primary"></i> Website
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="crm-tab" data-bs-toggle="pill" data-bs-target="#crm" type="button" role="tab">
+                                    <i class="fas fa-users text-warning"></i> CRM
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sentiment-tab" data-bs-toggle="pill" data-bs-target="#sentiment" type="button" role="tab">
+                                    <i class="fas fa-heart text-danger"></i> Sentimentos
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="languages-tab" data-bs-toggle="pill" data-bs-target="#languages" type="button" role="tab">
+                                    <i class="fas fa-language text-secondary"></i> Idiomas
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="tab-content" id="integrationTabsContent">
+                    <!-- WhatsApp Integration -->
+                    <div class="tab-pane fade show active" id="whatsapp" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fab fa-whatsapp text-success"></i> Integração WhatsApp</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-section">
+                                    <h6>Configuração Twilio</h6>
+                                    <form id="whatsappConfigForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Account SID</label>
+                                                    <input type="text" class="form-control" id="twilioAccountSid" placeholder="ACxxxxx...">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Auth Token</label>
+                                                    <input type="password" class="form-control" id="twilioAuthToken" placeholder="Token de autenticação">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Número WhatsApp</label>
+                                                    <input type="text" class="form-control" id="whatsappNumber" placeholder="whatsapp:+5511999999999">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Webhook URL</label>
+                                                    <input type="text" class="form-control" id="whatsappWebhook" readonly value="/webhook/whatsapp">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save"></i> Salvar Configuração
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <div class="config-section">
+                                    <h6>Status da Integração</h6>
+                                    <div id="whatsappStatus">
+                                        <span class="badge bg-secondary">Não configurado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Integration -->
+                    <div class="tab-pane fade" id="telegram" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fab fa-telegram text-info"></i> Integração Telegram</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-section">
+                                    <h6>Configuração Bot</h6>
+                                    <form id="telegramConfigForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Bot Token</label>
+                                                    <input type="password" class="form-control" id="telegramBotToken" placeholder="123456:ABC-DEF...">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Webhook URL</label>
+                                                    <input type="text" class="form-control" id="telegramWebhook" readonly value="/webhook/telegram">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="fas fa-save"></i> Salvar Configuração
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <div class="config-section">
+                                    <h6>Status da Integração</h6>
+                                    <div id="telegramStatus">
+                                        <span class="badge bg-secondary">Não configurado</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Website Integration -->
+                    <div class="tab-pane fade" id="website" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-globe text-primary"></i> Integração Website</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-section">
+                                    <h6>Configuração do Widget</h6>
+                                    <form id="websiteConfigForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Título do Chat</label>
+                                                    <input type="text" class="form-control" id="chatTitle" value="Clínica Espaço Vida">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Cor Principal</label>
+                                                    <input type="color" class="form-control" id="primaryColor" value="#0d6efd">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Posição</label>
+                                                    <select class="form-control" id="widgetPosition">
+                                                        <option value="bottom-right">Inferior Direita</option>
+                                                        <option value="bottom-left">Inferior Esquerda</option>
+                                                        <option value="top-right">Superior Direita</option>
+                                                        <option value="top-left">Superior Esquerda</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Idioma Padrão</label>
+                                                    <select class="form-control" id="defaultLanguage">
+                                                        <option value="pt">Português</option>
+                                                        <option value="en">English</option>
+                                                        <option value="es">Español</option>
+                                                        <option value="auto">Auto-detectar</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" onclick="generateWidget()">
+                                            <i class="fas fa-code"></i> Gerar Código
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <div class="config-section" id="widgetCodeSection" style="display: none;">
+                                    <h6>Código do Widget</h6>
+                                    <p class="text-muted">Copie e cole este código no seu website, antes da tag &lt;/body&gt;:</p>
+                                    <div class="code-block" id="widgetCode"></div>
+                                    <button class="btn btn-outline-primary mt-2" onclick="copyWidgetCode()">
+                                        <i class="fas fa-copy"></i> Copiar Código
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CRM Integration -->
+                    <div class="tab-pane fade" id="crm" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-users text-warning"></i> Integração CRM</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="crmCards">
+                                    <!-- CRM cards will be loaded here -->
+                                </div>
+                                
+                                <div class="config-section mt-4">
+                                    <h6>Teste de Sincronização</h6>
+                                    <form id="testCrmForm">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <select class="form-control" id="testCrmType">
+                                                    <option value="hubspot">HubSpot</option>
+                                                    <option value="salesforce">Salesforce</option>
+                                                    <option value="pipedrive">Pipedrive</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" class="form-control" id="testSessionId" placeholder="ID da Sessão">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-warning" onclick="testCrmSync()">
+                                                    <i class="fas fa-sync"></i> Testar Sincronização
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div id="crmTestResult" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sentiment Analysis -->
+                    <div class="tab-pane fade" id="sentiment" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-heart text-danger"></i> Análise de Sentimentos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-section">
+                                    <h6>Teste de Análise</h6>
+                                    <form id="sentimentTestForm">
+                                        <div class="mb-3">
+                                            <label class="form-label">Mensagem para Análise</label>
+                                            <textarea class="form-control" id="sentimentTestMessage" rows="3" placeholder="Digite uma mensagem para analisar o sentimento..."></textarea>
+                                        </div>
+                                        <button type="button" class="btn btn-danger" onclick="testSentiment()">
+                                            <i class="fas fa-search"></i> Analisar Sentimento
+                                        </button>
+                                    </form>
+                                    <div id="sentimentResult" class="mt-3"></div>
+                                </div>
+                                
+                                <div class="config-section">
+                                    <h6>Análise de Conversa</h6>
+                                    <form id="conversationSentimentForm">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <input type="text" class="form-control" id="conversationSessionId" placeholder="ID da Sessão">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="button" class="btn btn-outline-danger" onclick="analyzeConversation()">
+                                                    <i class="fas fa-chart-line"></i> Analisar Conversa
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <div id="conversationSentimentResult" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Languages -->
+                    <div class="tab-pane fade" id="languages" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-language text-secondary"></i> Suporte Multilíngue</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-section">
+                                    <h6>Idiomas Suportados</h6>
+                                    <div id="supportedLanguages" class="row">
+                                        <!-- Languages will be loaded here -->
+                                    </div>
+                                </div>
+                                
+                                <div class="config-section">
+                                    <h6>Teste de Tradução</h6>
+                                    <form id="translationTestForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Texto</label>
+                                                    <textarea class="form-control" id="translationText" rows="3" placeholder="Digite o texto para traduzir..."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Idioma de Destino</label>
+                                                    <select class="form-control" id="targetLanguage">
+                                                        <option value="en">English</option>
+                                                        <option value="es">Español</option>
+                                                        <option value="fr">Français</option>
+                                                        <option value="de">Deutsch</option>
+                                                        <option value="it">Italiano</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary" onclick="testTranslation()">
+                                            <i class="fas fa-language"></i> Traduzir
+                                        </button>
+                                    </form>
+                                    <div id="translationResult" class="mt-3"></div>
+                                </div>
+                                
+                                <div class="config-section">
+                                    <h6>Estatísticas de Uso</h6>
+                                    <div id="languageStats">
+                                        <!-- Stats will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCRMConfig();
+            loadLanguages();
+            loadLanguageStats();
+        });
+
+        // WhatsApp Configuration
+        document.getElementById('whatsappConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const config = {
+                account_sid: document.getElementById('twilioAccountSid').value,
+                auth_token: document.getElementById('twilioAuthToken').value,
+                whatsapp_number: document.getElementById('whatsappNumber').value
+            };
+            
+            fetch('/admin/integrations/whatsapp/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('whatsappStatus').innerHTML = '<span class="badge bg-success">Configurado</span>';
+                    alert('Configuração WhatsApp salva com sucesso!');
+                } else {
+                    alert('Erro ao salvar configuração: ' + data.error);
+                }
+            });
+        });
+
+        // Telegram Configuration
+        document.getElementById('telegramConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const config = {
+                bot_token: document.getElementById('telegramBotToken').value
+            };
+            
+            fetch('/admin/integrations/telegram/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('telegramStatus').innerHTML = '<span class="badge bg-success">Configurado</span>';
+                    alert('Configuração Telegram salva com sucesso!');
+                } else {
+                    alert('Erro ao salvar configuração: ' + data.error);
+                }
+            });
+        });
+
+        // Website Widget Generation
+        function generateWidget() {
+            const config = {
+                title: document.getElementById('chatTitle').value,
+                primary_color: document.getElementById('primaryColor').value,
+                position: document.getElementById('widgetPosition').value,
+                language: document.getElementById('defaultLanguage').value
+            };
+            
+            const params = new URLSearchParams(config);
+            
+            fetch('/admin/integrations/website/widget?' + params)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('widgetCode').textContent = data.widget_code;
+                    document.getElementById('widgetCodeSection').style.display = 'block';
+                }
+            });
+        }
+
+        function copyWidgetCode() {
+            const code = document.getElementById('widgetCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Código copiado para a área de transferência!');
+            });
+        }
+
+        // CRM Functions
+        function loadCRMConfig() {
+            fetch('/admin/crm/config')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('crmCards');
+                container.innerHTML = '';
+                
+                Object.entries(data).forEach(([key, crm]) => {
+                    const statusBadge = crm.configured ? 
+                        '<span class="badge bg-success">Configurado</span>' : 
+                        '<span class="badge bg-secondary">Não configurado</span>';
+                    
+                    container.innerHTML += `
+                        <div class="col-md-4 mb-3">
+                            <div class="card integration-card">
+                                <div class="card-body">
+                                    <h6>${crm.name}</h6>
+                                    <p class="text-muted small">${crm.features.join(', ')}</p>
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function testCrmSync() {
+            const crmType = document.getElementById('testCrmType').value;
+            const sessionId = document.getElementById('testSessionId').value;
+            
+            if (!sessionId) {
+                alert('Por favor, insira um ID de sessão');
+                return;
+            }
+            
+            fetch('/admin/crm/sync_conversation', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({crm_type: crmType, session_id: sessionId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('crmTestResult');
+                if (data.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success">Sincronização realizada com sucesso!</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Erro: ${data.error}</div>`;
+                }
+            });
+        }
+
+        // Sentiment Analysis Functions
+        function testSentiment() {
+            const message = document.getElementById('sentimentTestMessage').value;
+            
+            if (!message) {
+                alert('Por favor, insira uma mensagem');
+                return;
+            }
+            
+            fetch('/admin/sentiment/analyze', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('sentimentResult');
+                const polarityColor = data.polarity > 0 ? 'success' : data.polarity < 0 ? 'danger' : 'warning';
+                
+                resultDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>Resultado da Análise:</strong><br>
+                        <span class="badge bg-${polarityColor}">Polaridade: ${data.polarity.toFixed(2)}</span>
+                        <span class="badge bg-secondary">Subjetividade: ${data.subjectivity.toFixed(2)}</span><br>
+                        <small>Tom sugerido: ${data.suggested_tone}</small>
+                    </div>
+                `;
+            });
+        }
+
+        function analyzeConversation() {
+            const sessionId = document.getElementById('conversationSessionId').value;
+            
+            if (!sessionId) {
+                alert('Por favor, insira um ID de sessão');
+                return;
+            }
+            
+            fetch(`/admin/sentiment/conversation/${sessionId}`)
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('conversationSentimentResult');
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>Análise da Conversa:</strong><br>
+                            <span class="badge bg-primary">Tendência: ${data.trend}</span>
+                            <span class="badge bg-secondary">Polaridade Média: ${data.average_polarity.toFixed(2)}</span>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Language Functions
+        function loadLanguages() {
+            fetch('/admin/languages')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('supportedLanguages');
+                container.innerHTML = '';
+                
+                Object.entries(data).forEach(([code, name]) => {
+                    container.innerHTML += `
+                        <div class="col-md-3 mb-2">
+                            <span class="badge bg-primary">${code.toUpperCase()}</span> ${name}
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function testTranslation() {
+            const text = document.getElementById('translationText').value;
+            const language = document.getElementById('targetLanguage').value;
+            
+            if (!text) {
+                alert('Por favor, insira um texto');
+                return;
+            }
+            
+            fetch('/admin/languages/translate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text: text, language: language})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('translationResult');
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>Tradução:</strong><br>
+                        ${data.translated_text}
+                    </div>
+                `;
+            });
+        }
+
+        function loadLanguageStats() {
+            fetch('/admin/languages/stats')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('languageStats');
+                container.innerHTML = '';
+                
+                Object.entries(data).forEach(([lang, count]) => {
+                    container.innerHTML += `
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>${lang.toUpperCase()}</span>
+                            <span class="badge bg-secondary">${count} usos</span>
+                        </div>
+                    `;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

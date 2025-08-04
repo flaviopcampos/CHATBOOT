@@ -1,0 +1,44 @@
+{
+  "welcome_message": "Bonjour! Bienvenue à la Clínica Espaço Vida. Comment puis-je vous aider aujourd'hui?",
+  "emergency_detected": "J'ai détecté que vous pourriez traverser une situation d'urgence. Notre équipe est disponible 24h/24.",
+  "contact_info": "Pour un contact immédiat: +55 (27) 999637447",
+  "treatment_info": "Nous offrons un traitement spécialisé en dépendance chimique et santé mentale.",
+  "insurance_accepted": "Nous acceptons diverses assurances médicales.",
+  "schedule_appointment": "Souhaiteriez-vous programmer une évaluation?",
+  "thank_you": "Merci de nous avoir contactés.",
+  "error_message": "Désolé, une erreur s'est produite. Veuillez réessayer.",
+  "goodbye": "Passez une excellente journée! Nous sommes là quand vous avez besoin de nous.",
+  "clinic_name": "Clínica Espaço Vida",
+  "specialties": {
+    "addiction": "Dépendance Chimique",
+    "mental_health": "Santé Mentale",
+    "therapy": "Thérapie",
+    "rehabilitation": "Réhabilitation"
+  },
+  "treatments": {
+    "twelve_steps": "12 Étapes",
+    "cbt": "Thérapie Cognitivo-Comportementale",
+    "minnesota_model": "Modèle Minnesota",
+    "relapse_prevention": "Prévention des Rechutes"
+  },
+  "substances": {
+    "alcohol": "Alcool",
+    "cocaine": "Cocaïne",
+    "crack": "Crack",
+    "marijuana": "Marijuana",
+    "medications": "Médicaments",
+    "gambling": "Jeu Pathologique"
+  },
+  "team": {
+    "psychiatrists": "Psychiatres",
+    "psychologists": "Psychologues",
+    "therapists": "Thérapeutes",
+    "nurses": "Infirmiers",
+    "social_workers": "Travailleurs Sociaux"
+  },
+  "schedule": {
+    "weekdays": "Lundi au Vendredi: 8h à 18h",
+    "saturday": "Samedis: 8h à 12h",
+    "emergency": "Urgences: 24 heures"
+  }
+}

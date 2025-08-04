@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Intelligence - Clínica Espaço Vida</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        .bi-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .bi-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .bi-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .kpi-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .kpi-trend {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .trend-up {
+            color: #4caf50;
+        }
+        
+        .trend-down {
+            color: #f44336;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .chart-container-large {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .period-selector {
+            background: white;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .period-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin: 0 2px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .period-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .period-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .metric-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .export-btn {
+            background: linear-gradient(45deg, #4caf50, #45a049);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading i {
+            font-size: 3rem;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .dashboard-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-positive {
+            background-color: #4caf50;
+        }
+        
+        .status-neutral {
+            background-color: #ff9800;
+        }
+        
+        .status-negative {
+            background-color: #f44336;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .table td {
+            border-color: #e9ecef;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="bi-container">
+        <div class="container-fluid">
+            <div class="dashboard-header">
+                <h1><i class="fas fa-chart-line"></i> Business Intelligence</h1>
+                <p>Dashboard de Análise e Métricas da Clínica Espaço Vida</p>
+            </div>
+            
+            <!-- Seletor de Período -->
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="period-selector text-center">
+                        <button class="period-btn active" data-period="7d">7 Dias</button>
+                        <button class="period-btn" data-period="30d">30 Dias</button>
+                        <button class="period-btn" data-period="90d">90 Dias</button>
+                        <button class="period-btn" data-period="1y">1 Ano</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- KPIs Principais -->
+            <div class="row" id="kpiContainer">
+                <div class="col-12">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Carregando KPIs...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráficos e Métricas -->
+            <div class="row">
+                <!-- Conversas por Dia -->
+                <div class="col-lg-8">
+                    <div class="bi-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4><i class="fas fa-comments"></i> Conversas por Dia</h4>
+                            <button class="export-btn" onclick="exportChart('conversations')">
+                                <i class="fas fa-download"></i> Exportar
+                            </button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="conversationsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Métricas de Conversas -->
+                <div class="col-lg-4">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-chart-bar"></i> Métricas de Conversas</h4>
+                        <div id="conversationMetrics">
+                            <div class="loading">
+                                <i class="fas fa-spinner"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Análise de Sentimento -->
+                <div class="col-lg-6">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-heart"></i> Análise de Sentimento</h4>
+                        <div class="chart-container">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Agendamentos por Status -->
+                <div class="col-lg-6">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-calendar-check"></i> Agendamentos por Status</h4>
+                        <div class="chart-container">
+                            <canvas id="appointmentsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Conversas por Hora -->
+                <div class="col-lg-8">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-clock"></i> Distribuição por Horário</h4>
+                        <div class="chart-container">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Idiomas Mais Usados -->
+                <div class="col-lg-4">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-globe"></i> Idiomas</h4>
+                        <div id="languageMetrics">
+                            <div class="loading">
+                                <i class="fas fa-spinner"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabela de Serviços Mais Procurados -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-star"></i> Serviços Mais Procurados</h4>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="servicesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Serviço</th>
+                                        <th>Agendamentos</th>
+                                        <th>Percentual</th>
+                                        <th>Receita</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" class="text-center">
+                                            <div class="loading">
+                                                <i class="fas fa-spinner"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botões de Exportação -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="bi-card">
+                        <h4><i class="fas fa-file-export"></i> Exportar Relatórios</h4>
+                        <div class="btn-group" role="group">
+                            <button class="export-btn me-2" onclick="exportReport('dashboard', 'json')">
+                                <i class="fas fa-file-code"></i> Dashboard (JSON)
+                            </button>
+                            <button class="export-btn me-2" onclick="exportReport('conversations', 'csv')">
+                                <i class="fas fa-file-csv"></i> Conversas (CSV)
+                            </button>
+                            <button class="export-btn me-2" onclick="exportReport('appointments', 'csv')">
+                                <i class="fas fa-file-csv"></i> Agendamentos (CSV)
+                            </button>
+                            <button class="export-btn" onclick="exportReport('kpis', 'json')">
+                                <i class="fas fa-file-code"></i> KPIs (JSON)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentPeriod = '30d';
+        let dashboardData = {};
+        let charts = {};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            loadDashboardData();
+        });
+        
+        function setupEventListeners() {
+            // Seletores de período
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPeriod = this.dataset.period;
+                    loadDashboardData();
+                });
+            });
+        }
+        
+        function loadDashboardData() {
+            showLoading();
+            
+            Promise.all([
+                fetch(`/bi/dashboard/${currentPeriod}`).then(r => r.json()),
+                fetch(`/bi/kpis/monthly`).then(r => r.json())
+            ])
+            .then(([dashboardResponse, kpisResponse]) => {
+                if (dashboardResponse.success) {
+                    dashboardData = dashboardResponse.data;
+                    updateDashboard();
+                }
+                
+                if (kpisResponse.success) {
+                    updateKPIs(kpisResponse.kpis);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar dados:', error);
+                showError('Erro ao carregar dados do dashboard');
+            });
+        }
+        
+        function showLoading() {
+            // Implementar indicadores de carregamento
+        }
+        
+        function showError(message) {
+            alert(message);
+        }
+        
+        function updateKPIs(kpis) {
+            const container = document.getElementById('kpiContainer');
+            container.innerHTML = '';
+            
+            kpis.forEach(kpi => {
+                const col = document.createElement('div');
+                col.className = 'col-lg-2 col-md-4 col-sm-6';
+                
+                const trendIcon = kpi.trend === 'up' ? 'fa-arrow-up trend-up' : 'fa-arrow-down trend-down';
+                const achievement = ((kpi.value / kpi.target) * 100).toFixed(1);
+                
+                col.innerHTML = `
+                    <div class="kpi-card">
+                        <div class="kpi-trend">
+                            <i class="fas ${trendIcon}"></i>
+                        </div>
+                        <div class="kpi-label">${kpi.name}</div>
+                        <div class="kpi-value">${formatValue(kpi.value, kpi.unit)}</div>
+                        <div class="kpi-label">Meta: ${formatValue(kpi.target, kpi.unit)} (${achievement}%)</div>
+                    </div>
+                `;
+                
+                container.appendChild(col);
+            });
+        }
+        
+        function updateDashboard() {
+            updateConversationMetrics();
+            updateConversationsChart();
+            updateSentimentChart();
+            updateAppointmentsChart();
+            updateHourlyChart();
+            updateLanguageMetrics();
+            updateServicesTable();
+        }
+        
+        function updateConversationMetrics() {
+            const container = document.getElementById('conversationMetrics');
+            const metrics = dashboardData.conversations;
+            
+            container.innerHTML = `
+                <div class="metric-item">
+                    <div class="metric-value">${metrics.total_conversations || 0}</div>
+                    <div class="metric-label">Total de Conversas</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">${metrics.avg_response_time || 0}s</div>
+                    <div class="metric-label">Tempo Médio de Resposta</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">${metrics.satisfaction_rate || 0}%</div>
+                    <div class="metric-label">Taxa de Satisfação</div>
+                </div>
+            `;
+        }
+        
+        function updateConversationsChart() {
+            const ctx = document.getElementById('conversationsChart').getContext('2d');
+            const data = dashboardData.conversations.conversations_by_day || [];
+            
+            if (charts.conversations) {
+                charts.conversations.destroy();
+            }
+            
+            charts.conversations = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => formatDate(d.date)),
+                    datasets: [{
+                        label: 'Conversas',
+                        data: data.map(d => d.count),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateSentimentChart() {
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            const sentimentData = dashboardData.sentiment.sentiment_distribution || {};
+            
+            if (charts.sentiment) {
+                charts.sentiment.destroy();
+            }
+            
+            const labels = Object.keys(sentimentData);
+            const data = labels.map(label => sentimentData[label].count || 0);
+            const colors = {
+                'positive': '#4caf50',
+                'neutral': '#ff9800',
+                'negative': '#f44336'
+            };
+            
+            charts.sentiment = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                    datasets: [{
+                        data: data,
+                        backgroundColor: labels.map(l => colors[l] || '#9e9e9e'),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateAppointmentsChart() {
+            const ctx = document.getElementById('appointmentsChart').getContext('2d');
+            const appointmentData = dashboardData.appointments.appointments_by_status || {};
+            
+            if (charts.appointments) {
+                charts.appointments.destroy();
+            }
+            
+            const labels = Object.keys(appointmentData);
+            const data = Object.values(appointmentData);
+            const colors = {
+                'scheduled': '#2196f3',
+                'confirmed': '#4caf50',
+                'completed': '#9e9e9e',
+                'cancelled': '#f44336',
+                'no_show': '#ff9800'
+            };
+            
+            charts.appointments = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                    datasets: [{
+                        label: 'Agendamentos',
+                        data: data,
+                        backgroundColor: labels.map(l => colors[l] || '#9e9e9e'),
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateHourlyChart() {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            const hourlyData = dashboardData.conversations.conversations_by_hour || [];
+            
+            if (charts.hourly) {
+                charts.hourly.destroy();
+            }
+            
+            // Criar array com todas as horas (0-23)
+            const allHours = Array.from({length: 24}, (_, i) => i);
+            const hourCounts = allHours.map(hour => {
+                const found = hourlyData.find(d => d.hour === hour);
+                return found ? found.count : 0;
+            });
+            
+            charts.hourly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: allHours.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Conversas',
+                        data: hourCounts,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: '#667eea',
+                        borderWidth: 1,
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateLanguageMetrics() {
+            const container = document.getElementById('languageMetrics');
+            const languages = dashboardData.multilingual.language_distribution || [];
+            
+            if (languages.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nenhum dado de idioma disponível</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            languages.slice(0, 5).forEach(lang => {
+                const item = document.createElement('div');
+                item.className = 'metric-item';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <span>${getLanguageName(lang.language)}</span>
+                        <strong>${lang.count}</strong>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function updateServicesTable() {
+            const tbody = document.querySelector('#servicesTable tbody');
+            const services = dashboardData.appointments.appointments_by_service || [];
+            
+            if (services.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum dado disponível</td></tr>';
+                return;
+            }
+            
+            const total = services.reduce((sum, service) => sum + service.count, 0);
+            
+            tbody.innerHTML = '';
+            
+            services.forEach(service => {
+                const percentage = ((service.count / total) * 100).toFixed(1);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${service.service}</td>
+                    <td>${service.count}</td>
+                    <td>${percentage}%</td>
+                    <td>R$ ${(service.count * 150).toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function formatValue(value, unit) {
+            if (unit === 'R$') {
+                return `R$ ${value.toFixed(2)}`;
+            } else if (unit === '%') {
+                return `${value.toFixed(1)}%`;
+            } else {
+                return `${value} ${unit}`;
+            }
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+        
+        function getLanguageName(code) {
+            const languages = {
+                'pt': 'Português',
+                'en': 'Inglês',
+                'es': 'Espanhol',
+                'fr': 'Francês',
+                'it': 'Italiano'
+            };
+            return languages[code] || code;
+        }
+        
+        function exportChart(chartType) {
+            if (charts[chartType]) {
+                const url = charts[chartType].toBase64Image();
+                const link = document.createElement('a');
+                link.download = `${chartType}_chart.png`;
+                link.href = url;
+                link.click();
+            }
+        }
+        
+        function exportReport(reportType, format) {
+            const url = `/bi/export/${reportType}?format=${format}&start_date=${dashboardData.start_date}&end_date=${dashboardData.end_date}`;
+            
+            if (format === 'csv') {
+                // Download direto para CSV
+                window.open(url, '_blank');
+            } else {
+                // Abrir JSON em nova aba
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const jsonStr = JSON.stringify(data.data, null, 2);
+                        const blob = new Blob([jsonStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = `${reportType}_report.json`;
+                        link.href = url;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(error => {
+                        console.error('Erro ao exportar:', error);
+                        alert('Erro ao exportar relatório');
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

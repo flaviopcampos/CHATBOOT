@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot - Clínica de Reabilitação</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            order: 2;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #4CAF50;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .typing-indicator .message-avatar {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .typing-dots {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 18px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .welcome-message i {
+            font-size: 3rem;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .welcome-message h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .welcome-message p {
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .action-button:hover {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .reset-button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+
+        .reset-button:hover {
+            background: #ff5252;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .chat-header h1 {
+                font-size: 1.3rem;
+            }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="status-indicator"></div>
+            <h1><i class="fas fa-heart"></i> Clínica Espaço Vida</h1>
+            <p>Assistente Virtual Especializado em Dependência Química e Saúde Mental</p>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <i class="fas fa-hands-helping"></i>
+                <h2>Bem-vindo(a)!</h2>
+                <p>Sou seu assistente virtual especializado em dependência química e saúde mental. Estou aqui para ajudar você ou sua família com informações sobre nossos tratamentos, metodologias e como podemos apoiar na jornada de recuperação.</p>
+                <div class="action-buttons">
+                    <button class="action-button" onclick="sendQuickMessage('Quais tratamentos vocês oferecem?')">Tratamentos</button>
+                    <button class="action-button" onclick="sendQuickMessage('Como funciona a internação?')">Internação</button>
+                    <button class="action-button" onclick="sendQuickMessage('Aceita convênio médico?')">Convênios</button>
+                    <button class="action-button" onclick="sendQuickMessage('Preciso de ajuda urgente')">Emergência</button>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form class="chat-input-form" id="chatForm">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Digite sua mensagem..."
+                    autocomplete="off"
+                    maxlength="500"
+                >
+                <button type="submit" class="send-button" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+                <button type="button" class="reset-button" onclick="resetConversation()" title="Nova conversa">
+                    <i class="fas fa-refresh"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const chatForm = document.getElementById('chatForm');
+
+        let isTyping = false;
+
+        // Foco automático no input
+        messageInput.focus();
+
+        // Envio do formulário
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        // Função para enviar mensagem
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || isTyping) return;
+
+            // Adiciona mensagem do usuário
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Mostra indicador de digitação
+            showTyping();
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                // Esconde indicador de digitação
+                hideTyping();
+
+                if (response.ok) {
+                    // Adiciona resposta do bot
+                    addMessage(data.response, 'bot');
+                } else {
+                    // Mostra erro
+                    addErrorMessage(data.error || 'Erro ao processar mensagem');
+                }
+            } catch (error) {
+                hideTyping();
+                console.error('Erro:', error);
+                addErrorMessage('Erro de conexão. Verifique sua internet e tente novamente.');
+            }
+        }
+
+        // Função para adicionar mensagem
+        function addMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = formatMessage(content);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            
+            // Remove mensagem de boas-vindas se existir
+            const welcomeMessage = chatMessages.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Função para formatar mensagem
+        function formatMessage(content) {
+            // Converte quebras de linha em <br>
+            content = content.replace(/\n/g, '<br>');
+            
+            // Destaca números de telefone
+            content = content.replace(/(\(?\d{2}\)?\s?\d{4,5}-?\d{4})/g, '<strong>$1</strong>');
+            
+            // Destaca horários
+            content = content.replace(/(\d{1,2}h\d{0,2})/g, '<strong>$1</strong>');
+            
+            return content;
+        }
+
+        // Função para adicionar mensagem de erro
+        function addErrorMessage(error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${error}`;
+            chatMessages.appendChild(errorDiv);
+            scrollToBottom();
+        }
+
+        // Função para mostrar indicador de digitação
+        function showTyping() {
+            isTyping = true;
+            sendButton.disabled = true;
+            typingIndicator.style.display = 'flex';
+            scrollToBottom();
+        }
+
+        // Função para esconder indicador de digitação
+        function hideTyping() {
+            isTyping = false;
+            sendButton.disabled = false;
+            typingIndicator.style.display = 'none';
+        }
+
+        // Função para rolar para o final
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 100);
+        }
+
+        // Função para enviar mensagem rápida
+        function sendQuickMessage(message) {
+            messageInput.value = message;
+            sendMessage();
+        }
+
+        // Função para resetar conversa
+        async function resetConversation() {
+            if (confirm('Deseja iniciar uma nova conversa? O histórico atual será perdido.')) {
+                try {
+                    const response = await fetch('/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Limpa o chat
+                        chatMessages.innerHTML = `
+                            <div class="welcome-message">
+                                <i class="fas fa-hands-helping"></i>
+                                <h2>Bem-vindo(a)!</h2>
+                                <p>Sou seu assistente virtual especializado em dependência química e saúde mental. Estou aqui para ajudar você ou sua família com informações sobre nossos tratamentos, metodologias e como podemos apoiar na jornada de recuperação.</p>
+                                <div class="action-buttons">
+                                    <button class="action-button" onclick="sendQuickMessage('Quais tratamentos vocês oferecem?')">Tratamentos</button>
+                                    <button class="action-button" onclick="sendQuickMessage('Como funciona a internação?')">Internação</button>
+                                    <button class="action-button" onclick="sendQuickMessage('Aceita convênio médico?')">Convênios</button>
+                                    <button class="action-button" onclick="sendQuickMessage('Preciso de ajuda urgente')">Emergência</button>
+                                </div>
+                            </div>
+                            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                                <div class="message-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="typing-dots">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        `;
+                        messageInput.focus();
+                    }
+                } catch (error) {
+                    console.error('Erro ao resetar conversa:', error);
+                    alert('Erro ao resetar conversa. Tente novamente.');
+                }
+            }
+        }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Enter para enviar
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                sendMessage();
+            }
+            
+            // Escape para focar no input
+            if (e.key === 'Escape') {
+                messageInput.focus();
+            }
+        });
+
+        // Auto-resize do textarea (se necessário)
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+
+        // Verificação de saúde da aplicação
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                if (!response.ok) {
+                    console.warn('Aplicação pode estar com problemas');
+                }
+            } catch (error) {
+                console.error('Erro de conectividade:', error);
+            }
+        }
+
+        // Verifica saúde a cada 30 segundos
+        setInterval(checkHealth, 30000);
+        
+        // Verificação inicial
+        checkHealth();
+    </script>
+</body>
+</html>

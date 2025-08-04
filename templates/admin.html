@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrativo - Clínica Espaço Vida</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .admin-header h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .ticket-item, .conversation-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .ticket-id {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .ticket-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-aberto {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-em-andamento {
+            background: #feebc8;
+            color: #c05621;
+        }
+
+        .status-resolvido {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .ticket-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ticket-description {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .ticket-meta {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .actions {
+            margin-top: 10px;
+        }
+
+        .actions .btn {
+            margin-right: 5px;
+            font-size: 0.8em;
+            padding: 5px 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .status-aberto {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        
+        .status-em-andamento {
+            background: #ffc107;
+            color: #212529;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        
+        .status-resolvido {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        
+        .status-fechado {
+            background: #6c757d;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1><i class="fas fa-chart-line"></i> Dashboard Administrativo</h1>
+            <p>Clínica Espaço Vida - Sistema de Gerenciamento</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #667eea;">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-number" id="totalConversations">{{ statistics.total_conversations }}</div>
+                <div class="stat-label">Total de Conversas</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #48bb78;">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="stat-number" id="totalTickets">{{ statistics.total_tickets }}</div>
+                <div class="stat-label">Total de Tickets</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #ed8936;">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stat-number" id="conversationsToday">{{ statistics.conversations_today }}</div>
+                <div class="stat-label">Conversas Hoje</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #f56565;">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="stat-number" id="openTickets">{{ statistics.tickets_by_status.get('aberto', 0) }}</div>
+                <div class="stat-label">Tickets Abertos</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="content-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-ticket-alt"></i> Tickets Recentes
+                    </div>
+                    <button class="btn btn-primary" onclick="openCreateTicketModal()">
+                        <i class="fas fa-plus"></i> Novo Ticket
+                    </button>
+                </div>
+                
+                <div id="ticketsList">
+                    {% for ticket in tickets %}
+                    <div class="ticket-item">
+                        <div class="ticket-header">
+                            <span class="ticket-id">#{{ ticket[0] }}</span>
+                            <span class="ticket-status status-{{ ticket[4] }}">{{ ticket[4].title() }}</span>
+                        </div>
+                        <div class="ticket-title">{{ ticket[2] }}</div>
+                        <div class="ticket-description">{{ ticket[3][:100] }}{% if ticket[3]|length > 100 %}...{% endif %}</div>
+                        <div class="ticket-meta">
+                            <i class="fas fa-clock"></i> {{ ticket[9] }}
+                            {% if ticket[6] %} | <i class="fas fa-user"></i> {{ ticket[6] }}{% endif %}
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-success" onclick="updateTicketStatus({{ ticket[0] }}, 'em-andamento')">
+                                <i class="fas fa-play"></i> Em Andamento
+                            </button>
+                            <button class="btn btn-warning" onclick="updateTicketStatus({{ ticket[0] }}, 'resolvido')">
+                                <i class="fas fa-check"></i> Resolver
+                            </button>
+                            <button class="btn btn-primary" onclick="viewTicketDetails({{ ticket[0] }})">
+                                <i class="fas fa-eye"></i> Detalhes
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fas fa-comments"></i> Conversas Recentes
+                    </div>
+                    <button class="btn btn-primary" onclick="exportConversations()">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </div>
+                
+                <div id="conversationsList">
+                    {% for conv in conversations %}
+                    <div class="conversation-item">
+                        <div class="ticket-meta">
+                            <i class="fas fa-clock"></i> {{ conv[5] }} | Session: {{ conv[1][:8] }}...
+                        </div>
+                        <div style="margin: 10px 0;">
+                            <strong>Usuário:</strong> {{ conv[2][:80] }}{% if conv[2]|length > 80 %}...{% endif %}
+                        </div>
+                        <div style="color: #666;">
+                            <strong>Bot:</strong> {{ conv[3][:80] }}{% if conv[3]|length > 80 %}...{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="btn btn-warning" onclick="createBackup()">
+                <i class="fas fa-database"></i> Criar Backup
+            </button>
+            <button class="btn btn-primary" onclick="sendDailyReport()">
+                <i class="fas fa-envelope"></i> Enviar Relatório
+            </button>
+            <a href="/" class="btn btn-success">
+                <i class="fas fa-comments"></i> Voltar ao Chat
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal para criar ticket -->
+    <div id="createTicketModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateTicketModal()">&times;</span>
+            <h2><i class="fas fa-ticket-alt"></i> Criar Novo Ticket</h2>
+            <form id="createTicketForm">
+                <div class="form-group">
+                    <label for="ticketTitle">Título:</label>
+                    <input type="text" id="ticketTitle" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="ticketDescription">Descrição:</label>
+                    <textarea id="ticketDescription" name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="contactName">Nome do Contato:</label>
+                    <input type="text" id="contactName" name="contact_name">
+                </div>
+                <div class="form-group">
+                    <label for="contactPhone">Telefone:</label>
+                    <input type="text" id="contactPhone" name="contact_phone">
+                </div>
+                <div class="form-group">
+                    <label for="contactEmail">Email:</label>
+                    <input type="email" id="contactEmail" name="contact_email">
+                </div>
+                <div class="form-group">
+                    <label for="priority">Prioridade:</label>
+                    <select id="priority" name="priority">
+                        <option value="baixa">Baixa</option>
+                        <option value="media" selected>Média</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Criar Ticket
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openCreateTicketModal() {
+            document.getElementById('createTicketModal').style.display = 'block';
+        }
+
+        function closeCreateTicketModal() {
+            document.getElementById('createTicketModal').style.display = 'none';
+        }
+
+        document.getElementById('createTicketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/create_ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    alert('Ticket criado com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao criar ticket');
+                }
+            } catch (error) {
+                alert('Erro ao criar ticket: ' + error.message);
+            }
+        });
+
+        async function updateTicketStatus(ticketId, status) {
+            try {
+                const response = await fetch('/admin/update_ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ticket_id: ticketId,
+                        status: status
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Status do ticket atualizado!');
+                    location.reload();
+                } else {
+                    alert('Erro ao atualizar ticket');
+                }
+            } catch (error) {
+                alert('Erro ao atualizar ticket: ' + error.message);
+            }
+        }
+
+        async function createBackup() {
+            try {
+                const response = await fetch('/admin/backup', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Backup criado com sucesso: ' + result.backup_path);
+                } else {
+                    alert('Erro ao criar backup');
+                }
+            } catch (error) {
+                alert('Erro ao criar backup: ' + error.message);
+            }
+        }
+
+        async function sendDailyReport() {
+            try {
+                const response = await fetch('/admin/send_report', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    alert(data.message || 'Relatório enviado com sucesso!');
+                } else {
+                    alert(data.message || 'Erro ao enviar relatório: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao enviar relatório: ' + error.message);
+            }
+        }
+
+        function exportConversations() {
+            window.open('/admin/export_conversations', '_blank');
+        }
+
+        async function viewTicketDetails(ticketId) {
+            try {
+                const response = await fetch(`/admin/ticket_details/${ticketId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showTicketDetailsModal(data);
+                } else {
+                    alert('Erro ao carregar detalhes do ticket');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar detalhes do ticket: ' + error.message);
+            }
+        }
+        
+        function showTicketDetailsModal(data) {
+            const ticket = data.ticket;
+            const conversations = data.conversations;
+            
+            let conversationsHtml = '';
+            if (conversations && conversations.length > 0) {
+                conversationsHtml = conversations.map(conv => `
+                    <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #007bff; background: #f8f9fa;">
+                        <div style="margin-bottom: 5px;"><strong>👤 Usuário:</strong> ${conv[0]}</div>
+                        <div style="color: #666;"><strong>🤖 Bot:</strong> ${conv[1]}</div>
+                        <div style="font-size: 0.8em; color: #999; margin-top: 5px;">⏰ ${new Date(conv[2]).toLocaleString('pt-BR')}</div>
+                    </div>
+                `).join('');
+            } else {
+                conversationsHtml = '<p style="color: #666;">Nenhuma conversa encontrada para este ticket.</p>';
+            }
+            
+            const modalHtml = `
+                <div id="ticketDetailsModal" class="modal" style="display: block;">
+                    <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+                        <span class="close" onclick="closeTicketDetailsModal()">&times;</span>
+                        <h2><i class="fas fa-ticket-alt"></i> Detalhes do Ticket #${ticket[0]}</h2>
+                        
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                            <h3>📋 Informações do Ticket</h3>
+                            <p><strong>Título:</strong> ${ticket[2]}</p>
+                            <p><strong>Descrição:</strong> ${ticket[3]}</p>
+                            <p><strong>Status:</strong> <span class="status-${ticket[4]}">${ticket[4].toUpperCase()}</span></p>
+                            <p><strong>Prioridade:</strong> ${ticket[10]}</p>
+                            <p><strong>Criado em:</strong> ${new Date(ticket[5]).toLocaleString('pt-BR')}</p>
+                            ${ticket[6] ? `<p><strong>Atualizado em:</strong> ${new Date(ticket[6]).toLocaleString('pt-BR')}</p>` : ''}
+                            ${ticket[7] ? `<p><strong>Contato:</strong> ${ticket[7]}</p>` : ''}
+                            ${ticket[8] ? `<p><strong>Telefone:</strong> ${ticket[8]}</p>` : ''}
+                            ${ticket[9] ? `<p><strong>Email:</strong> ${ticket[9]}</p>` : ''}
+                            ${ticket[11] ? `<p><strong>Observações:</strong> ${ticket[11]}</p>` : ''}
+                        </div>
+                        
+                        <div>
+                            <h3>💬 Histórico da Conversa</h3>
+                            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                                ${conversationsHtml}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button class="btn btn-success" onclick="updateTicketStatus(${ticket[0]}, 'em-andamento'); closeTicketDetailsModal();">
+                                <i class="fas fa-play"></i> Em Andamento
+                            </button>
+                            <button class="btn btn-warning" onclick="updateTicketStatus(${ticket[0]}, 'resolvido'); closeTicketDetailsModal();">
+                                <i class="fas fa-check"></i> Resolver
+                            </button>
+                            <button class="btn btn-secondary" onclick="closeTicketDetailsModal()">
+                                <i class="fas fa-times"></i> Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove modal existente se houver
+            const existingModal = document.getElementById('ticketDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Adiciona o novo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeTicketDetailsModal() {
+            const modal = document.getElementById('ticketDetailsModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Fechar modal ao clicar fora
+        window.onclick = function(event) {
+            const modal = document.getElementById('createTicketModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Atualizar estatísticas a cada 30 segundos
+        setInterval(async function() {
+            try {
+                const response = await fetch('/admin/statistics');
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalConversations').textContent = stats.total_conversations;
+                    document.getElementById('totalTickets').textContent = stats.total_tickets;
+                    document.getElementById('conversationsToday').textContent = stats.conversations_today;
+                    document.getElementById('openTickets').textContent = stats.tickets_by_status.aberto || 0;
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar estatísticas:', error);
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
